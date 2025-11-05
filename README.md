@@ -1,4 +1,5 @@
 # invent97
+<<<<<<< HEAD
 
 Application locale de gestion d'inventaire informatique pour une PME.
 
@@ -36,3 +37,6 @@ L'application est accessible sur `http://localhost:3000`.
 Les fichiers téléchargés sont stockés dans `public/uploads/`.
 
 > ℹ️ Ajoutez d'abord vos employés via l'onglet **Employés** et vos catégories via l'onglet **Types de matériel**, puis assignez-les aux équipements depuis le formulaire dédié. Documentez ensuite chaque matériel via l'onglet **Historique** accessible depuis la liste.
+=======
+Logiciel inventaire
+>>>>>>> 47b17d8109dd9b299455c551e21e6407c1a1f6e0
