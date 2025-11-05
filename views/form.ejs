@@ -1,0 +1,10 @@
+<% const redirectValue = typeof redirect !== 'undefined' ? redirect : null; %>
+<% const identifiantsForForm = (typeof identifiants !== 'undefined' && Array.isArray(identifiants))
+  ? identifiants
+  : (equipement && Array.isArray(equipement.identifiants) ? equipement.identifiants : []);
+%>
+<%- include('layout', {
+  title: mode === 'edit' ? 'Modifier un équipement' : 'Nouvel équipement',
+  bodyView: 'partials/form-body',
+  bodyData: { mode, equipement, errors, states, employes, types, redirect: redirectValue, identifiants: identifiantsForForm }
+}) %>

@@ -1,0 +1,38 @@
+<div class="max-w-md mx-auto bg-white border border-slate-200 rounded-lg shadow-sm p-8">
+  <h1 class="text-2xl font-semibold text-slate-900 mb-6">Connexion administrateur</h1>
+  <% if (error) { %>
+    <div class="mb-4 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-red-700">
+      <%= error %>
+    </div>
+  <% } %>
+  <form method="post" action="/login" class="space-y-5">
+    <div>
+      <label for="username" class="block text-sm font-medium text-slate-700">Login</label>
+      <input
+        id="username"
+        name="username"
+        type="text"
+        value="<%= username %>"
+        required
+        class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+      />
+    </div>
+    <div>
+      <label for="password" class="block text-sm font-medium text-slate-700">Mot de passe</label>
+      <input
+        id="password"
+        name="password"
+        type="password"
+        required
+        class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+      />
+    </div>
+    <button
+      type="submit"
+      class="w-full rounded-md bg-indigo-600 py-2 text-white font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+    >
+      Se connecter
+    </button>
+  </form>
+  <p class="mt-6 text-xs text-slate-500">Identifiants par défaut : admin / admin123 (à modifier après connexion).</p>
+</div>

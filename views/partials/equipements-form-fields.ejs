@@ -1,0 +1,378 @@
+      <div class="md:col-span-1">
+        <label for="type_id" class="block text-sm font-medium text-slate-700">Type *</label>
+        <% if ((types || []).length === 0) { %>
+          <div class="mt-1 rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+            Aucun type disponible. <a href="/types/ajouter" class="text-indigo-600 hover:text-indigo-700">Créer un type</a> avant l'enregistrement.
+          </div>
+        <% } else { %>
+          <select
+            id="type_id"
+            name="type_id"
+            required
+            class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+          >
+            <option value="">Sélectionnez un type</option>
+            <% types.forEach((typeItem) => { %>
+              <option
+                value="<%= typeItem.id %>"
+                <%= String(equipement.type_id || '') === String(typeItem.id) || (!equipement.type_id && equipement.type && equipement.type.trim() === typeItem.nom.trim()) ? 'selected' : '' %>
+              >
+                <%= typeItem.nom %>
+              </option>
+            <% }) %>
+          </select>
+          <p class="mt-1 text-xs text-slate-500">
+            Besoin d'un nouveau type ? <a href="/types/ajouter" class="text-indigo-600 hover:text-indigo-700">Ajoutez-le ici</a> puis revenez à ce formulaire.
+          </p>
+        <% } %>
+      </div>
+
+      <div class="md:col-span-1">
+        <label for="marque" class="block text-sm font-medium text-slate-700">Marque *</label>
+        <input
+          id="marque"
+          name="marque"
+          type="text"
+          value="<%= equipement.marque || '' %>"
+          required
+          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        />
+      </div>
+
+      <div class="md:col-span-1">
+        <label for="modele" class="block text-sm font-medium text-slate-700">Modèle *</label>
+        <input
+          id="modele"
+          name="modele"
+          type="text"
+          value="<%= equipement.modele || '' %>"
+          required
+          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        />
+      </div>
+
+      <div class="md:col-span-1">
+        <label for="numero_serie" class="block text-sm font-medium text-slate-700">Numéro de série</label>
+        <input
+          id="numero_serie"
+          name="numero_serie"
+          type="text"
+          value="<%= equipement.numero_serie || '' %>"
+          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        />
+        <p class="mt-1 text-xs text-slate-500">Optionnel.</p>
+      </div>
+
+      <div class="md:col-span-1">
+        <label for="etat" class="block text-sm font-medium text-slate-700">État *</label>
+        <select
+          id="etat"
+          name="etat"
+          required
+          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        >
+          <% states.forEach((state) => { %>
+            <option value="<%= state %>" <%= equipement.etat === state ? 'selected' : '' %>><%= state %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="md:col-span-1">
+        <label for="date_achat" class="block text-sm font-medium text-slate-700">Date d'achat</label>
+        <input
+          id="date_achat"
+          name="date_achat"
+          type="date"
+          value="<%= equipement.date_achat || '' %>"
+          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        />
+      </div>
+
+      <div class="md:col-span-1">
+        <label for="lieu_achat" class="block text-sm font-medium text-slate-700">Fournisseur</label>
+        <input
+          id="lieu_achat"
+          name="lieu_achat"
+          type="text"
+          value="<%= typeof equipement.lieu_achat !== 'undefined' && equipement.lieu_achat !== null ? equipement.lieu_achat : '' %>"
+          placeholder="Ex. Darty, Infodom..."
+          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        />
+      </div>
+
+      <div class="md:col-span-1">
+        <label for="prix" class="block text-sm font-medium text-slate-700">Prix (€)</label>
+        <input
+          id="prix"
+          name="prix"
+          type="number"
+          min="0"
+          step="0.01"
+          inputmode="decimal"
+          value="<%= typeof equipement.prix !== 'undefined' && equipement.prix !== null && equipement.prix !== '' ? equipement.prix : '' %>"
+          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        />
+        <p class="mt-1 text-xs text-slate-500">Optionnel · utilisez un point pour les décimales.</p>
+      </div>
+
+      <div class="md:col-span-1">
+        <label for="garantie_annees" class="block text-sm font-medium text-slate-700">Garantie (années)</label>
+        <input
+          id="garantie_annees"
+          name="garantie_annees"
+          type="number"
+          min="0"
+          step="1"
+          inputmode="numeric"
+          value="<%= typeof equipement.garantie_annees !== 'undefined' && equipement.garantie_annees !== null && equipement.garantie_annees !== '' ? equipement.garantie_annees : '' %>"
+          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        />
+        <p class="mt-1 text-xs text-slate-500">Optionnel · nombre entier (0 pour aucune garantie).</p>
+      </div>
+
+      <div class="md:col-span-1">
+        <label for="employe_id" class="block text-sm font-medium text-slate-700">Employé attribué</label>
+        <% if ((employes || []).length === 0) { %>
+          <div class="mt-1 rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+            Aucun employé disponible. <a href="/employes/ajouter" class="text-indigo-600 hover:text-indigo-700">Créer un employé</a> avant l'attribution.
+          </div>
+        <% } else { %>
+          <select
+            id="employe_id"
+            name="employe_id"
+            class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+          >
+            <option value="" <%= !equipement.employe_id ? 'selected' : '' %>>Non attribué</option>
+            <% employes.forEach((employe) => { %>
+              <option
+                value="<%= employe.id %>"
+                <%= String(equipement.employe_id || '') === String(employe.id) ? 'selected' : '' %>
+              >
+                <%= employe.nom_complet %><%= employe.poste ? ` · ${employe.poste}` : '' %><%= employe.territoire ? ` · ${employe.territoire === 'martinique' ? 'Martinique' : 'Guadeloupe'}` : '' %>
+              </option>
+            <% }) %>
+          </select>
+        <% } %>
+      </div>
+
+        <div class="md:col-span-2">
+          <% const identifiantsList = Array.isArray(identifiants) ? identifiants : []; %>
+          <% const identifiantsToRender = identifiantsList.length ? identifiantsList : [{}]; %>
+          <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <span class="block text-sm font-medium text-slate-700">Identifiants de connexion</span>
+              <p class="mt-1 text-xs text-slate-500">Ajoutez autant de couples nom/mot de passe que nécessaire. Laissez vide si non applicable.</p>
+            </div>
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 rounded-md border border-indigo-200 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+              data-add-identifiant
+            >
+              <span aria-hidden="true">+</span>
+              Ajouter un identifiant
+            </button>
+          </div>
+
+          <div class="mt-4 flex flex-col gap-3" data-identifiants-container>
+            <% identifiantsToRender.forEach((identifiant) => { %>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 p-4" data-identifiant-row>
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700" data-label-nom>Nom de session</label>
+                    <input
+                      type="text"
+                      name="identifiants_nom[]"
+                      value="<%= identifiant.nom || '' %>"
+                      class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                      data-input-nom
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700" data-label-password>Mot de passe</label>
+                    <input
+                      type="text"
+                      name="identifiants_mot_de_passe[]"
+                      value="<%= identifiant.mot_de_passe || '' %>"
+                      class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                      data-input-password
+                    />
+                  </div>
+                </div>
+                <div class="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100"
+                    data-remove-identifiant
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+
+          <template id="identifiant-row-template">
+            <div class="rounded-lg border border-slate-200 bg-slate-50 p-4" data-identifiant-row>
+              <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700" data-label-nom>Nom de session</label>
+                  <input
+                    type="text"
+                    name="identifiants_nom[]"
+                    class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                    data-input-nom
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700" data-label-password>Mot de passe</label>
+                  <input
+                    type="text"
+                    name="identifiants_mot_de_passe[]"
+                    class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                    data-input-password
+                  />
+                </div>
+              </div>
+              <div class="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100"
+                  data-remove-identifiant
+                >
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          </template>
+        </div>
+
+      <div class="md:col-span-2">
+        <label for="commentaire" class="block text-sm font-medium text-slate-700">Commentaire</label>
+        <textarea
+          id="commentaire"
+          name="commentaire"
+          rows="3"
+          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        ><%= equipement.commentaire || '' %></textarea>
+      </div>
+
+        <script>
+          (function () {
+            const container = document.querySelector('[data-identifiants-container]');
+            const addButton = document.querySelector('[data-add-identifiant]');
+            const template = document.getElementById('identifiant-row-template');
+            if (!container || !template) {
+              return;
+            }
+
+            const generateId = (prefix) => `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
+
+            const assignFieldIds = (row) => {
+              const nomLabel = row.querySelector('[data-label-nom]');
+              const nomInput = row.querySelector('[data-input-nom]');
+              const passwordLabel = row.querySelector('[data-label-password]');
+              const passwordInput = row.querySelector('[data-input-password]');
+              if (nomLabel && nomInput) {
+                const fieldId = generateId('identifiant_nom');
+                nomLabel.setAttribute('for', fieldId);
+                nomInput.id = fieldId;
+              }
+              if (passwordLabel && passwordInput) {
+                const fieldId = generateId('identifiant_password');
+                passwordLabel.setAttribute('for', fieldId);
+                passwordInput.id = fieldId;
+              }
+            };
+
+            const createRow = (nomValue = '', passwordValue = '') => {
+              const fragment = template.content.cloneNode(true);
+              const row = fragment.querySelector('[data-identifiant-row]');
+              if (!row) {
+                return null;
+              }
+              const nomInput = row.querySelector('[data-input-nom]');
+              const passwordInput = row.querySelector('[data-input-password]');
+              if (nomInput) {
+                nomInput.value = nomValue;
+              }
+              if (passwordInput) {
+                passwordInput.value = passwordValue;
+              }
+              assignFieldIds(row);
+              return row;
+            };
+
+            const rows = () => Array.from(container.querySelectorAll('[data-identifiant-row]'));
+
+            const ensureAtLeastOneRow = () => {
+              if (rows().length === 0) {
+                const row = createRow();
+                if (row) {
+                  container.appendChild(row);
+                }
+              }
+            };
+
+            const updateRemoveButtons = () => {
+              const currentRows = rows();
+              currentRows.forEach((row) => {
+                const button = row.querySelector('[data-remove-identifiant]');
+                if (!button) {
+                  return;
+                }
+                const disable = currentRows.length <= 1;
+                button.disabled = disable;
+                button.setAttribute('aria-disabled', disable ? 'true' : 'false');
+              });
+            };
+
+            rows().forEach(assignFieldIds);
+            ensureAtLeastOneRow();
+            updateRemoveButtons();
+
+            addButton?.addEventListener('click', () => {
+              const row = createRow();
+              if (!row) {
+                return;
+              }
+              container.appendChild(row);
+              updateRemoveButtons();
+              const firstInput = row.querySelector('input');
+              if (firstInput) {
+                firstInput.focus();
+              }
+            });
+
+            container.addEventListener('click', (event) => {
+              const trigger = event.target.closest('[data-remove-identifiant]');
+              if (!trigger) {
+                return;
+              }
+              event.preventDefault();
+              const row = trigger.closest('[data-identifiant-row]');
+              if (!row) {
+                return;
+              }
+              row.remove();
+              ensureAtLeastOneRow();
+              updateRemoveButtons();
+            });
+          })();
+        </script>
+
+      <div class="md:col-span-2">
+        <label for="fichier_facture" class="block text-sm font-medium text-slate-700">Facture (PDF, image)</label>
+        <input
+          id="fichier_facture"
+          name="fichier_facture"
+          type="file"
+          accept=".pdf,image/*"
+          class="mt-1 w-full text-sm"
+        />
+        <% if (equipement.fichier_facture) { %>
+          <p class="mt-2 text-xs text-slate-500">
+            Facture actuelle :
+            <a href="/uploads/<%= equipement.fichier_facture %>" target="_blank" class="text-indigo-600 hover:text-indigo-700">Télécharger</a>
+          </p>
+        <% } %>
+      </div>

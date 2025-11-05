@@ -1,0 +1,184 @@
+<% const formatCurrency = (value) => {
+  const amount = Number(value) || 0;
+  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(amount);
+}; %>
+<% const formatPercent = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || Number.isNaN(numeric)) {
+    return '—';
+  }
+  return `${(numeric * 100).toFixed(1)} %`;
+}; %>
+<% const territoryLabels = {
+  martinique: 'Martinique',
+  guadeloupe: 'Guadeloupe',
+  non_attribue: 'Non attribué'
+}; %>
+<% const totalCount = Number(stats?.totalCount) || 0; %>
+<% const totalValue = Number(stats?.totalValue) || 0; %>
+
+<div class="flex flex-col gap-8">
+  <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <p class="text-xs uppercase tracking-wide text-slate-500">Total équipements</p>
+      <p class="mt-2 text-3xl font-semibold text-slate-900"><%= summary?.total ?? 0 %></p>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <p class="text-xs uppercase tracking-wide text-slate-500">Équipements en panne</p>
+  <p class="mt-2 text-3xl font-semibold text-rose-600"><%= stats?.enPanneCount ?? summary?.enPanne ?? 0 %></p>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <p class="text-xs uppercase tracking-wide text-slate-500">Valeur totale estimée</p>
+      <p class="mt-2 text-3xl font-semibold text-slate-900"><%= formatCurrency(totalValue) %></p>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <p class="text-xs uppercase tracking-wide text-slate-500">Valeur moyenne par équipement</p>
+      <p class="mt-2 text-3xl font-semibold text-slate-900">
+        <% if (totalCount > 0) { %>
+          <%= formatCurrency(totalValue / totalCount) %>
+        <% } else { %>
+          —
+        <% } %>
+      </p>
+    </div>
+  </div>
+
+  <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-6">
+    <div>
+      <h2 class="text-xl font-semibold text-slate-900">Répartition par territoire</h2>
+      <p class="text-sm text-slate-600">Quantité de matériel attribué par territoire d’employé et part du parc.</p>
+    </div>
+    <% const territoryRows = Array.isArray(stats?.quantityByTerritoire) ? stats.quantityByTerritoire : []; %>
+    <% if (territoryRows.length === 0) { %>
+      <div class="rounded-md border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-500">Aucun matériel n’est actuellement attribué.</div>
+    <% } else { %>
+      <div class="overflow-x-auto rounded-lg border border-slate-200">
+        <table class="min-w-full divide-y divide-slate-200 text-sm">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="px-4 py-3 text-left font-semibold text-slate-600">Territoire</th>
+              <th class="px-4 py-3 text-left font-semibold text-slate-600">Quantité</th>
+              <th class="px-4 py-3 text-left font-semibold text-slate-600">Part</th>
+              <th class="px-4 py-3 text-right font-semibold text-slate-600">Valeur estimée</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <% territoryRows.forEach((row) => { %>
+              <% const label = territoryLabels[row.territoire] || row.territoire || '—'; %>
+              <tr class="hover:bg-slate-50">
+                <td class="px-4 py-3 font-medium text-slate-900"><%= label %></td>
+                <td class="px-4 py-3 text-slate-700"><%= row.total %></td>
+                <td class="px-4 py-3 text-slate-600">
+                  <% if (totalCount > 0) { %>
+                    <%= formatPercent(row.total / totalCount) %>
+                  <% } else { %>
+                    —
+                  <% } %>
+                </td>
+                <td class="px-4 py-3 text-right text-slate-700"><%= formatCurrency(row.valeur_totale) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+
+  <section class="grid gap-6 lg:grid-cols-2">
+    <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+      <div>
+        <h3 class="text-lg font-semibold text-slate-900">Valeur par type de matériel</h3>
+        <p class="text-sm text-slate-600">Classement des équipements d’après leur catégorie.</p>
+      </div>
+      <% const typeRows = Array.isArray(stats?.valueByType) ? stats.valueByType : []; %>
+      <% if (typeRows.length === 0) { %>
+        <div class="rounded-md border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-500">Aucune donnée disponible.</div>
+      <% } else { %>
+        <div class="overflow-x-auto rounded-lg border border-slate-200">
+          <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-slate-50">
+              <tr>
+                <th class="px-4 py-3 text-left font-semibold text-slate-600">Type</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-600">Quantité</th>
+                <th class="px-4 py-3 text-right font-semibold text-slate-600">Valeur estimée</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <% typeRows.forEach((row) => { %>
+                <tr class="hover:bg-slate-50">
+                  <td class="px-4 py-3 font-medium text-slate-900"><%= row.type %></td>
+                  <td class="px-4 py-3 text-slate-700"><%= row.total %></td>
+                  <td class="px-4 py-3 text-right text-slate-700"><%= formatCurrency(row.valeur_totale) %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+      <div>
+        <h3 class="text-lg font-semibold text-slate-900">Valeur par marque</h3>
+        <p class="text-sm text-slate-600">Répartition des montants investis selon les constructeurs.</p>
+      </div>
+      <% const marqueRows = Array.isArray(stats?.valueByMarque) ? stats.valueByMarque : []; %>
+      <% if (marqueRows.length === 0) { %>
+        <div class="rounded-md border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-500">Aucune donnée disponible.</div>
+      <% } else { %>
+        <div class="overflow-x-auto rounded-lg border border-slate-200">
+          <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-slate-50">
+              <tr>
+                <th class="px-4 py-3 text-left font-semibold text-slate-600">Marque</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-600">Quantité</th>
+                <th class="px-4 py-3 text-right font-semibold text-slate-600">Valeur estimée</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <% marqueRows.forEach((row) => { %>
+                <tr class="hover:bg-slate-50">
+                  <td class="px-4 py-3 font-medium text-slate-900"><%= row.marque %></td>
+                  <td class="px-4 py-3 text-slate-700"><%= row.total %></td>
+                  <td class="px-4 py-3 text-right text-slate-700"><%= formatCurrency(row.valeur_totale) %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </section>
+
+  <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+    <div>
+      <h3 class="text-lg font-semibold text-slate-900">Valeur par fournisseur</h3>
+      <p class="text-sm text-slate-600">Investissements par point d’achat enregistré (lieu ou revendeur).</p>
+    </div>
+    <% const fournisseurRows = Array.isArray(stats?.valueByFournisseur) ? stats.valueByFournisseur : []; %>
+    <% if (fournisseurRows.length === 0) { %>
+      <div class="rounded-md border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-500">Aucun fournisseur renseigné.</div>
+    <% } else { %>
+      <div class="overflow-x-auto rounded-lg border border-slate-200">
+        <table class="min-w-full divide-y divide-slate-200 text-sm">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="px-4 py-3 text-left font-semibold text-slate-600">Fournisseur</th>
+              <th class="px-4 py-3 text-left font-semibold text-slate-600">Quantité</th>
+              <th class="px-4 py-3 text-right font-semibold text-slate-600">Valeur estimée</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <% fournisseurRows.forEach((row) => { %>
+              <tr class="hover:bg-slate-50">
+                <td class="px-4 py-3 font-medium text-slate-900"><%= row.fournisseur %></td>
+                <td class="px-4 py-3 text-slate-700"><%= row.total %></td>
+                <td class="px-4 py-3 text-right text-slate-700"><%= formatCurrency(row.valeur_totale) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+</div>

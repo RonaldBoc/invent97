@@ -1,0 +1,124 @@
+<div class="max-w-3xl mx-auto flex flex-col gap-6">
+  <div>
+    <a href="/employes" class="text-sm text-indigo-600 hover:text-indigo-700">← Retour à la liste des employés</a>
+  </div>
+  <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+    <h1 class="text-2xl font-semibold text-slate-900">
+      <%= mode === 'edit' ? 'Modifier un employé' : 'Ajouter un employé' %>
+    </h1>
+    <p class="mt-2 text-sm text-slate-600">Renseignez les informations du collaborateur pour faciliter l'assignation des équipements.</p>
+
+    <% if (errors.length) { %>
+      <div class="mt-4 space-y-2 rounded-md border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <% errors.forEach((error) => { %>
+          <p><%= error %></p>
+        <% }) %>
+      </div>
+    <% } %>
+
+    <form
+      class="mt-6 grid gap-4 md:grid-cols-2"
+      method="post"
+      action="<%= mode === 'edit' ? `/employes/modifier/${employe.id}` : '/employes/ajouter' %>"
+    >
+      <div class="md:col-span-1">
+        <label for="prenom" class="block text-sm font-medium text-slate-700">Prénom *</label>
+        <input
+          id="prenom"
+          name="prenom"
+          type="text"
+          value="<%= employe.prenom || '' %>"
+          required
+          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        />
+      </div>
+
+      <div class="md:col-span-1">
+        <label for="nom" class="block text-sm font-medium text-slate-700">Nom *</label>
+        <input
+          id="nom"
+          name="nom"
+          type="text"
+          value="<%= employe.nom || '' %>"
+          required
+          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        />
+      </div>
+
+      <div class="md:col-span-1">
+        <label for="email" class="block text-sm font-medium text-slate-700">Adresse e-mail</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          value="<%= employe.email || '' %>"
+          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        />
+      </div>
+
+      <div class="md:col-span-1">
+        <label for="telephone" class="block text-sm font-medium text-slate-700">Téléphone</label>
+        <input
+          id="telephone"
+          name="telephone"
+          type="text"
+          value="<%= employe.telephone || '' %>"
+          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        />
+      </div>
+
+      <div class="md:col-span-2">
+        <label for="poste" class="block text-sm font-medium text-slate-700">Poste</label>
+        <input
+          id="poste"
+          name="poste"
+          type="text"
+          value="<%= employe.poste || '' %>"
+          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        />
+      </div>
+
+      <div class="md:col-span-1">
+        <label for="territoire" class="block text-sm font-medium text-slate-700">Territoire *</label>
+        <select
+          id="territoire"
+          name="territoire"
+          required
+          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        >
+          <% const selectedTerritoire = employe.territoire || (Array.isArray(territoires) ? territoires[0] : 'martinique'); %>
+          <% (territoires || []).forEach((option) => { %>
+            <option value="<%= option %>" <%= selectedTerritoire === option ? 'selected' : '' %>>
+              <%= option === 'martinique' ? 'Martinique' : 'Guadeloupe' %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="md:col-span-2">
+        <label for="commentaire" class="block text-sm font-medium text-slate-700">Notes internes</label>
+        <textarea
+          id="commentaire"
+          name="commentaire"
+          rows="3"
+          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        ><%= employe.commentaire || '' %></textarea>
+      </div>
+
+      <div class="md:col-span-2 flex justify-end gap-3 pt-2">
+        <a
+          href="/employes"
+          class="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Annuler
+        </a>
+        <button
+          type="submit"
+          class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+        >
+          <%= mode === 'edit' ? 'Mettre à jour' : 'Enregistrer' %>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

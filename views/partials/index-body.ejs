@@ -1,0 +1,242 @@
+<div class="flex flex-col gap-8">
+  <% const availableTypes = filterOptions && Array.isArray(filterOptions.types) ? filterOptions.types : []; %>
+  <% const availableEmployes = filterOptions && Array.isArray(filterOptions.employes) ? filterOptions.employes : []; %>
+  <% const availableAnnees = filterOptions && Array.isArray(filterOptions.annees) ? filterOptions.annees : []; %>
+  <% const availableMarques = filterOptions && Array.isArray(filterOptions.marques) ? filterOptions.marques : []; %>
+  <% const formatPurchaseDate = (value) => {
+    if (!value || typeof value !== 'string') {
+      return '—';
+    }
+    const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) {
+      return value;
+    }
+    const [, year, month, day] = match;
+    return `${day}-${month}-${year.slice(-2)}`;
+  }; %>
+  <div class="grid gap-4 sm:grid-cols-3">
+    <div class="rounded-lg bg-white border border-slate-200 p-4 shadow-sm">
+      <p class="text-xs uppercase tracking-wide text-slate-500">Total</p>
+      <p class="mt-2 text-3xl font-semibold text-slate-900"><%= summary.total %></p>
+    </div>
+    <div class="rounded-lg bg-white border border-slate-200 p-4 shadow-sm">
+      <p class="text-xs uppercase tracking-wide text-slate-500">En panne</p>
+  <p class="mt-2 text-3xl font-semibold text-rose-600"><%= summary.enPanne %></p>
+    </div>
+    <div class="rounded-lg bg-white border border-slate-200 p-4 shadow-sm">
+      <p class="text-xs uppercase tracking-wide text-slate-500">Catégories</p>
+      <div class="mt-2 flex flex-wrap gap-2 text-sm text-slate-700">
+        <% if (summary.parCategorie.length === 0) { %>
+          <span>Aucune donnée</span>
+        <% } else { %>
+          <% summary.parCategorie.forEach((item) => { %>
+            <span class="rounded-md bg-indigo-50 px-2 py-1 text-indigo-700"><%= item.categorie %> (<%= item.count %>)</span>
+          <% }) %>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex flex-col gap-4 rounded-lg bg-white border border-slate-200 p-4 shadow-sm">
+  <form class="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7" method="get" action="/">
+      <div class="md:col-span-2 xl:col-span-2">
+        <label for="search" class="block text-sm font-medium text-slate-700">Recherche</label>
+        <input
+          id="search"
+          name="search"
+          type="text"
+          value="<%= filters.search %>"
+          placeholder="Type, marque, modèle, employé..."
+          class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        />
+      </div>
+      <div>
+        <label for="type" class="block text-sm font-medium text-slate-700">Type</label>
+        <select
+          id="type"
+          name="type"
+          class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        >
+          <option value="tous" <%= filters.type === 'tous' ? 'selected' : '' %>>Tous</option>
+          <% availableTypes.forEach((typeLabel) => { %>
+            <option value="<%= typeLabel %>" <%= filters.type === typeLabel ? 'selected' : '' %>><%= typeLabel %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
+        <label for="marque" class="block text-sm font-medium text-slate-700">Marque</label>
+        <select
+          id="marque"
+          name="marque"
+          class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        >
+          <option value="toutes" <%= filters.marque === 'toutes' ? 'selected' : '' %>>Toutes</option>
+          <% availableMarques.forEach((marqueOption) => { %>
+            <option value="<%= marqueOption %>" <%= filters.marque === marqueOption ? 'selected' : '' %>><%= marqueOption %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
+        <label for="annee" class="block text-sm font-medium text-slate-700">Année d'achat</label>
+        <select
+          id="annee"
+          name="annee"
+          class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        >
+          <option value="toutes" <%= filters.annee === 'toutes' ? 'selected' : '' %>>Toutes</option>
+          <% availableAnnees.forEach((anneeOption) => { %>
+            <option value="<%= anneeOption %>" <%= filters.annee === anneeOption ? 'selected' : '' %>><%= anneeOption %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
+        <label for="employe" class="block text-sm font-medium text-slate-700">Employé attribué</label>
+        <select
+          id="employe"
+          name="employe"
+          class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        >
+          <option value="tous" <%= filters.employe === 'tous' ? 'selected' : '' %>>Tous</option>
+          <% availableEmployes.forEach((employeOption) => { %>
+            <option
+              value="<%= employeOption.id %>"
+              <%= String(filters.employe || 'tous') === String(employeOption.id) ? 'selected' : '' %>
+            >
+              <%= employeOption.nom_complet %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
+        <label for="etat" class="block text-sm font-medium text-slate-700">État</label>
+        <select
+          id="etat"
+          name="etat"
+          class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        >
+          <option value="tous" <%= filters.etat === 'tous' ? 'selected' : '' %>>Tous</option>
+          <% states.forEach((state) => { %>
+            <option value="<%= state %>" <%= filters.etat === state ? 'selected' : '' %>><%= state %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="flex items-end gap-2 md:col-span-2 xl:col-span-1">
+        <button
+          type="submit"
+          class="flex-1 rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900"
+        >
+          Filtrer
+        </button>
+        <a
+          href="/"
+          class="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Réinitialiser
+        </a>
+      </div>
+    </form>
+    <div class="flex flex-col gap-2 sm:flex-row sm:justify-between">
+      <a
+        href="/ajouter"
+        class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+      >
+        Ajouter un équipement
+      </a>
+      <div class="flex items-center gap-3">
+        <a
+          href="/export"
+          class="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Export CSV
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+    <% if (equipements.length === 0) { %>
+      <div class="p-6 text-sm text-slate-600">Aucun équipement trouvé.</div>
+    <% } else { %>
+      <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <thead class="bg-slate-50">
+          <tr>
+            <th class="px-4 py-3 text-left font-semibold text-slate-600">Type</th>
+            <th class="px-4 py-3 text-left font-semibold text-slate-600">Marque</th>
+            <th class="px-4 py-3 text-left font-semibold text-slate-600">Modèle</th>
+            <th class="px-4 py-3 text-left font-semibold text-slate-600">État</th>
+            <th class="px-4 py-3 text-left font-semibold text-slate-600">Employé</th>
+            <th class="px-4 py-3 text-left font-semibold text-slate-600">Date achat</th>
+            <th class="px-4 py-3 text-right font-semibold text-slate-600">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <% equipements.forEach((item) => { %>
+            <tr
+              class="group cursor-pointer hover:bg-slate-50"
+              onclick="window.location.href='/equipements/<%= item.id %>'"
+            >
+              <td class="px-4 py-3">
+                <a href="/equipements/<%= item.id %>" class="text-indigo-600 hover:text-indigo-700 font-medium">
+                  <%= item.type_nom_final || item.type %>
+                </a>
+              </td>
+              <td class="px-4 py-3"><%= item.marque %></td>
+              <td class="px-4 py-3"><%= item.modele %></td>
+              <td class="px-4 py-3">
+                <% const badgeTheme = stateBadgeTheme && stateBadgeTheme[item.etat] ? stateBadgeTheme[item.etat] : { background: 'bg-slate-100', text: 'text-slate-700' }; %>
+                <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium <%= badgeTheme.background %> <%= badgeTheme.text %>">
+                  <%= item.etat %>
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <% if (item.employe_id) { %>
+                  <div class="flex flex-col">
+                    <span><%= item.employe_nom_complet %></span>
+                    <% if (item.employe_poste) { %>
+                      <span class="text-xs text-slate-500"><%= item.employe_poste %></span>
+                    <% } %>
+                    <% if (item.employe_territoire) { %>
+                      <span class="mt-1 inline-flex w-fit items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                        <%= item.employe_territoire === 'martinique' ? 'Martinique' : 'Guadeloupe' %>
+                      </span>
+                    <% } %>
+                  </div>
+                <% } else { %>
+                  <span class="text-slate-400">—</span>
+                <% } %>
+              </td>
+              <td class="px-4 py-3"><%= formatPurchaseDate(item.date_achat) %></td>
+              <td class="px-4 py-3 text-right">
+                <div class="flex justify-end gap-2">
+                  <a
+                    href="/modifier/<%= item.id %>"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100"
+                    title="Modifier"
+                    onclick="event.stopPropagation();"
+                  >
+                    ✏️
+                  </a>
+                  <a
+                    href="/supprimer/<%= item.id %>"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-rose-300 text-rose-600 hover:bg-rose-50"
+                    title="Supprimer"
+                    onclick="event.stopPropagation(); return confirm('Supprimer cet équipement ?');"
+                  >
+                    🗑️
+                  </a>
+                </div>
+              </td>
+            </tr>
+            <% if (item.commentaire) { %>
+              <tr class="bg-slate-50/60">
+                <td colspan="9" class="px-4 py-2 text-xs text-slate-600">
+                  <strong>Commentaire :</strong> <%= item.commentaire %>
+                </td>
+              </tr>
+            <% } %>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</div>

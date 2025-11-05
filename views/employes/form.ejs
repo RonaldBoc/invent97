@@ -1,0 +1,5 @@
+<%- include('../layout', {
+  title: mode === 'edit' ? 'Modifier un employé' : 'Nouvel employé',
+  bodyView: 'partials/employes-form-body',
+  bodyData: { mode, employe, territoires, errors }
+}) %>
