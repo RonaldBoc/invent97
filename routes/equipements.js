@@ -571,7 +571,7 @@ router.post('/ajouter', handleUpload('fichier_facture'), async (req, res) => {
     await replaceIdentifiantsForEquipement(newEquipementId, identifiants);
     
     // Rediriger vers la page de l'employé si on vient de là
-    if (employe && req.query.employe_id) {
+    if (employe && req.body.came_from_employee) {
       res.redirect(`/employes/${employe.id}`);
     } else {
       res.redirect('/');

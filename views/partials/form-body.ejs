@@ -26,6 +26,9 @@
       <% if (redirect === 'detail') { %>
         <input type="hidden" name="redirect" value="detail" />
       <% } %>
+      <% if (equipement && equipement.employe_id && equipement.employe_id !== '') { %>
+        <input type="hidden" name="came_from_employee" value="<%= equipement.employe_id %>" />
+      <% } %>
       <% const identifiantsList = Array.isArray(equipement && equipement.identifiants)
         ? equipement.identifiants
         : (typeof identifiants !== 'undefined' && Array.isArray(identifiants) ? identifiants : []);
