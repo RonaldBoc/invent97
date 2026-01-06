@@ -143,12 +143,42 @@
         Ajouter un équipement
       </a>
       <div class="flex items-center gap-3">
-        <a
-          href="/export"
-          class="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          Export CSV
-        </a>
+        <div class="relative group">
+          <button
+            class="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 gap-2"
+          >
+            Export CSV
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+            </svg>
+          </button>
+          <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+            <a
+              href="/export"
+              class="block px-4 py-2 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-t-md"
+            >
+              📋 Export complet (3 feuilles)
+            </a>
+            <a
+              href="/export/equipements"
+              class="block px-4 py-2 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-600"
+            >
+              🔧 Équipements
+            </a>
+            <a
+              href="/export/employes"
+              class="block px-4 py-2 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-600"
+            >
+              👥 Employés
+            </a>
+            <a
+              href="/export/statistiques"
+              class="block px-4 py-2 text-sm text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-b-md"
+            >
+              📊 Statistiques
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   </div>

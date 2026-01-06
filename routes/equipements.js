@@ -26,6 +26,15 @@ const {
   listIdentifiantsByEquipement,
   replaceIdentifiantsForEquipement
 } = require('../models/identifiantModel');
+const {
+  generateExcelFile,
+  generateEquipmentsExcel,
+  generateEmployeesExcel,
+  generateStatisticsExcel,
+  prepareEquipmentsData,
+  prepareEmployeesData,
+  prepareStatisticsData
+} = require('../models/csvExportModel');
 const stateBadgeTheme = require('../constants/stateBadgeTheme');
 
 const router = express.Router();
@@ -406,11 +415,15 @@ router.get('/statistiques', async (_req, res) => {
 router.get('/ajouter', async (req, res) => {
   try {
     const [employes, types] = await Promise.all([listEmployes(), listTypes()]);
+    
+    // Récupérer l'ID employé s'il est fourni en paramètre (depuis la page employé)
+    const prefilledEmployeId = req.query.employe_id ? String(req.query.employe_id).trim() : '';
+    
     res.render('form', {
       mode: 'create',
       equipement: {
         etat: allowedStates[0],
-        employe_id: '',
+        employe_id: prefilledEmployeId,
         type_id: '',
         lieu_achat: '',
         prix: '',
@@ -556,7 +569,13 @@ router.post('/ajouter', handleUpload('fichier_facture'), async (req, res) => {
       commentaire: req.body.commentaire
     });
     await replaceIdentifiantsForEquipement(newEquipementId, identifiants);
-    res.redirect('/');
+    
+    // Rediriger vers la page de l'employé si on vient de là
+    if (employe && req.query.employe_id) {
+      res.redirect(`/employes/${employe.id}`);
+    } else {
+      res.redirect('/');
+    }
   } catch (err) {
     console.error('Failed to create equipment:', err);
     deleteUploadedFile(fileName);
@@ -1048,43 +1067,98 @@ router.get('/supprimer/:id', async (req, res) => {
 
 router.get('/export', async (_req, res) => {
   try {
-    const equipements = await exportEquipements();
-    const headers = [
-      'id',
-      'type',
-      'type_id',
-      'marque',
-      'modele',
-      'numero_serie',
-      'etat',
-      'date_achat',
-      'employe_id',
-      'employe_nom_complet',
-      'employe_attribue',
-      'commentaire',
-      'fichier_facture',
-      'date_creation',
-      'date_modification'
-    ];
-
-    const escapeCsvValue = (value) => {
-      if (value === null || value === undefined) {
-        return '';
-      }
-      const stringValue = String(value).replace(/"/g, '""');
-      return `"${stringValue}"`;
-    };
-
-    const rows = equipements.map((item) => headers.map((h) => escapeCsvValue(item[h])).join(','));
-    const csvContent = [headers.join(','), ...rows].join('\n');
-    const fileName = `invent97-export-${Date.now()}.csv`;
-
-    res.setHeader('Content-Type', 'text/csv');
+    const XLSX = require('xlsx');
+    const workbook = await generateExcelFile();
+    
+    const date = new Date().toISOString().split('T')[0];
+    const fileName = `invent97-export-${date}.xlsx`;
+    
+    // Convertir le classeur en buffer
+    const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-    res.send(csvContent);
+    res.send(buffer);
   } catch (err) {
-    console.error('Failed to export equipment:', err);
+    console.error('Failed to export data:', err);
     res.status(500).render('error', { message: "Impossible d'exporter les données." });
+  }
+});
+
+router.get('/export/equipements', async (_req, res) => {
+  try {
+    const XLSX = require('xlsx');
+    const workbook = await generateEquipmentsExcel();
+    
+    const date = new Date().toISOString().split('T')[0];
+    const fileName = `invent97-equipements-${date}.xlsx`;
+    
+    const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.send(buffer);
+  } catch (err) {
+    console.error('Failed to export equipments:', err);
+    res.status(500).render('error', { message: "Impossible d'exporter les équipements." });
+  }
+});
+
+router.get('/export/employes', async (_req, res) => {
+  try {
+    const XLSX = require('xlsx');
+    const workbook = await generateEmployeesExcel();
+    
+    const date = new Date().toISOString().split('T')[0];
+    const fileName = `invent97-employes-${date}.xlsx`;
+    
+    const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.send(buffer);
+  } catch (err) {
+    console.error('Failed to export employees:', err);
+    res.status(500).render('error', { message: "Impossible d'exporter les employés." });
+  }
+});
+
+router.get('/export/statistiques', async (_req, res) => {
+  try {
+    const XLSX = require('xlsx');
+    const workbook = await generateStatisticsExcel();
+    
+    const date = new Date().toISOString().split('T')[0];
+    const fileName = `invent97-statistiques-${date}.xlsx`;
+    
+    const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.send(buffer);
+  } catch (err) {
+    console.error('Failed to export statistics:', err);
+    res.status(500).render('error', { message: "Impossible d'exporter les statistiques." });
+  }
+});
+
+// Route pour récupérer les exports en JSON (pour future intégration)
+router.get('/api/export/preview', async (_req, res) => {
+  try {
+    const data = await Promise.all([
+      prepareEquipmentsData(),
+      prepareEmployeesData(),
+      prepareStatisticsData()
+    ]);
+    
+    res.json({
+      equipements: data[0],
+      employes: data[1],
+      statistiques: data[2]
+    });
+  } catch (err) {
+    console.error('Failed to preview export:', err);
+    res.status(500).json({ error: "Impossible de générer l'aperçu des données." });
   }
 });
 

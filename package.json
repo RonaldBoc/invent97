@@ -19,6 +19,7 @@
     "express-session": "^1.18.2",
     "multer": "^2.0.2",
     "sqlite3": "^5.1.7",
-    "tailwindcss": "3.4.13"
+    "tailwindcss": "3.4.13",
+    "xlsx": "^0.18.5"
   }
 }
