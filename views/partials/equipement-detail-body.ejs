@@ -1,0 +1,908 @@
+<% const formatDate = (value) => {
+     if (!value) return '—';
+     if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+       const [year, month, day] = value.split('-');
+       return `${day}/${month}/${year}`;
+     }
+     return value;
+   };
+   const computeAge = (value) => {
+     if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+       return null;
+     }
+     const [year, month, day] = value.split('-').map(Number);
+     const purchaseDate = new Date(Date.UTC(year, month - 1, day));
+     const now = new Date();
+     const nowUtc = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+     if (Number.isNaN(purchaseDate.getTime())) {
+       return null;
+     }
+     let years = nowUtc.getUTCFullYear() - purchaseDate.getUTCFullYear();
+     let months = nowUtc.getUTCMonth() - purchaseDate.getUTCMonth();
+     let days = nowUtc.getUTCDate() - purchaseDate.getUTCDate();
+
+     if (days < 0) {
+       const prevMonth = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), 0));
+       days += prevMonth.getUTCDate();
+       months -= 1;
+     }
+     if (months < 0) {
+       months += 12;
+       years -= 1;
+     }
+
+     const parts = [];
+     if (years > 0) {
+       parts.push(`${years} an${years > 1 ? 's' : ''}`);
+     }
+     if (months > 0) {
+       parts.push(`${months} mois`);
+     }
+     if (parts.length === 0) {
+       parts.push(days > 0 ? `${days} jour${days > 1 ? 's' : ''}` : '0 jour');
+     }
+     return parts.join(' ');
+   };
+   const formatCurrency = (value) => {
+     if (value === null || typeof value === 'undefined' || value === '') {
+       return '—';
+     }
+     const parsed = Number(value);
+     if (!Number.isFinite(parsed)) {
+       return value;
+     }
+     const [integerPart, decimalPart = '00'] = parsed.toFixed(2).split('.');
+     const spacedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+     return `${spacedInteger},${decimalPart} €`;
+   };
+   const formatWarranty = (value) => {
+     if (value === null || typeof value === 'undefined' || value === '') {
+       return '—';
+     }
+     const parsed = Number(value);
+     if (!Number.isInteger(parsed) || parsed < 0) {
+       return value;
+     }
+     if (parsed === 0) {
+       return 'Aucune';
+     }
+     return parsed > 1 ? `${parsed} ans` : '1 an';
+   };
+   const computeWarrantyRemaining = (dateAchat, garantieAnnees) => {
+     if (!dateAchat || !/^\d{4}-\d{2}-\d{2}$/.test(dateAchat)) {
+       return null;
+     }
+     const parsedWarranty = Number(garantieAnnees);
+     if (!Number.isFinite(parsedWarranty) || parsedWarranty <= 0) {
+       return null;
+     }
+     const [year, month, day] = dateAchat.split('-').map(Number);
+     const purchaseDate = new Date(Date.UTC(year, month - 1, day));
+     if (Number.isNaN(purchaseDate.getTime())) {
+       return null;
+     }
+     const expiryDate = new Date(Date.UTC(year + parsedWarranty, month - 1, day));
+     const now = new Date();
+     const nowUtc = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+
+     if (expiryDate < nowUtc) {
+       return { expired: true, label: 'expirée' };
+     }
+
+     let years = expiryDate.getUTCFullYear() - nowUtc.getUTCFullYear();
+     let months = expiryDate.getUTCMonth() - nowUtc.getUTCMonth();
+     let days = expiryDate.getUTCDate() - nowUtc.getUTCDate();
+
+     if (days < 0) {
+       const prevMonth = new Date(Date.UTC(expiryDate.getUTCFullYear(), expiryDate.getUTCMonth(), 0));
+       days += prevMonth.getUTCDate();
+       months -= 1;
+     }
+     if (months < 0) {
+       months += 12;
+       years -= 1;
+     }
+
+     const segments = [];
+     if (years > 0) {
+       segments.push(`${years} an${years > 1 ? 's' : ''}`);
+     }
+     if (months > 0) {
+       segments.push(`${months} mois`);
+     }
+     if (years <= 0 && months <= 0) {
+       segments.push(days > 0 ? `${days} jour${days > 1 ? 's' : ''}` : '0 jour');
+     }
+
+     return {
+       expired: false,
+       label: segments.length ? segments.join(' ') : '0 jour'
+     };
+   };
+   const identifiantsList = Array.isArray(equipement.identifiants) ? equipement.identifiants : [];
+%>
+<div class="flex flex-col gap-6">
+  <div>
+    <a href="/" class="text-sm text-indigo-600 hover:text-indigo-700">← Retour à l'inventaire</a>
+  </div>
+
+  <% if (successMessage) { %>
+    <div class="rounded-md border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+      <%= successMessage %>
+    </div>
+  <% } %>
+  <% if (errorMessage) { %>
+    <div class="rounded-md border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+      <%= errorMessage %>
+    </div>
+  <% } %>
+
+  <div class="grid gap-6 xl:grid-cols-3">
+    <section class="xl:col-span-2 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div class="flex flex-col gap-3">
+          <h1 class="text-2xl font-semibold text-slate-900">Description de l'équipement · <span class="text-indigo-600">#<%= equipement.id %></span></h1>
+          <p class="text-sm text-slate-600">Consultez les caractéristiques principales et l'historique pour suivre la vie du matériel.</p>
+        </div>
+        <a
+          href="/modifier/<%= equipement.id %>?redirect=detail"
+          class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+        >
+          Modifier
+        </a>
+      </div>
+
+      <dl class="mt-6 grid gap-4 sm:grid-cols-2">
+        <div class="rounded-md border border-slate-100 bg-slate-50 px-4 py-3">
+          <dt class="text-xs uppercase tracking-wide text-slate-500">Type</dt>
+          <dd class="mt-1 text-sm font-medium text-slate-900"><%= equipement.type_nom_final || equipement.type %></dd>
+        </div>
+        <div class="rounded-md border border-slate-100 bg-slate-50 px-4 py-3">
+          <dt class="text-xs uppercase tracking-wide text-slate-500">Marque</dt>
+          <dd class="mt-1 text-sm font-medium text-slate-900"><%= equipement.marque %></dd>
+        </div>
+        <div class="rounded-md border border-slate-100 bg-slate-50 px-4 py-3">
+          <dt class="text-xs uppercase tracking-wide text-slate-500">Modèle</dt>
+          <dd class="mt-1 text-sm font-medium text-slate-900"><%= equipement.modele %></dd>
+        </div>
+        <div class="rounded-md border border-slate-100 bg-slate-50 px-4 py-3">
+          <dt class="text-xs uppercase tracking-wide text-slate-500">Numéro de série</dt>
+          <dd class="mt-1 font-medium text-slate-900 font-mono text-xs"><%= equipement.numero_serie %></dd>
+        </div>
+        <div class="rounded-md border border-slate-100 bg-slate-50 px-4 py-3">
+          <dt class="text-xs uppercase tracking-wide text-slate-500">État</dt>
+          <% const detailBadgeTheme = stateBadgeTheme && stateBadgeTheme[equipement.etat] ? stateBadgeTheme[equipement.etat] : { background: 'bg-slate-100', text: 'text-slate-700' }; %>
+          <dd class="mt-2 inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold <%= detailBadgeTheme.background %> <%= detailBadgeTheme.text %>"><%= equipement.etat %></dd>
+        </div>
+        <div class="rounded-md border border-slate-100 bg-slate-50 px-4 py-3">
+          <dt class="text-xs uppercase tracking-wide text-slate-500">Date d'achat</dt>
+          <dd class="mt-1 text-sm font-medium text-slate-900">
+            <%= formatDate(equipement.date_achat) %>
+            <% const ageLabel = computeAge(equipement.date_achat); %>
+            <% if (ageLabel) { %>
+              <span class="ml-2 text-xs text-slate-500">(Âge : <%= ageLabel %>)</span>
+            <% } %>
+          </dd>
+        </div>
+        <div class="rounded-md border border-slate-100 bg-slate-50 px-4 py-3">
+          <dt class="text-xs uppercase tracking-wide text-slate-500">Fournisseur</dt>
+          <dd class="mt-1 text-sm font-medium text-slate-900">
+            <% if (equipement.lieu_achat) { %>
+              <%= equipement.lieu_achat %>
+            <% } else { %>
+              <span class="text-slate-400">Non renseigné</span>
+            <% } %>
+          </dd>
+        </div>
+        <div class="rounded-md border border-slate-100 bg-slate-50 px-4 py-3">
+          <dt class="text-xs uppercase tracking-wide text-slate-500">Prix d'achat</dt>
+          <dd class="mt-1 text-sm font-medium text-slate-900">
+            <% if (equipement.prix !== null && typeof equipement.prix !== 'undefined' && equipement.prix !== '') { %>
+              <%= formatCurrency(equipement.prix) %>
+            <% } else { %>
+              <span class="text-slate-400">Non renseigné</span>
+            <% } %>
+          </dd>
+        </div>
+        <div class="rounded-md border border-slate-100 bg-slate-50 px-4 py-3">
+          <dt class="text-xs uppercase tracking-wide text-slate-500">Garantie</dt>
+          <dd class="mt-1 text-sm font-medium text-slate-900">
+            <% if (equipement.garantie_annees !== null && typeof equipement.garantie_annees !== 'undefined' && equipement.garantie_annees !== '') { %>
+              <%= formatWarranty(equipement.garantie_annees) %>
+              <% const warrantyInfo = computeWarrantyRemaining(equipement.date_achat, equipement.garantie_annees); %>
+              <% if (warrantyInfo) { %>
+                <% if (warrantyInfo.expired) { %>
+                  <span class="ml-2 inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">expirée</span>
+                <% } else { %>
+                  <span class="ml-2 text-xs text-slate-500">(reste <%= warrantyInfo.label %>)</span>
+                <% } %>
+              <% } %>
+            <% } else { %>
+              <span class="text-slate-400">Non renseigné</span>
+            <% } %>
+          </dd>
+        </div>
+        <div class="sm:col-span-2 rounded-md border border-slate-100 bg-slate-50 px-4 py-3">
+          <dt class="text-xs uppercase tracking-wide text-slate-500">Identifiants de connexion</dt>
+          <dd class="mt-1 text-sm font-medium text-slate-900">
+            <% if (identifiantsList.length) { %>
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-md border border-indigo-200 px-3 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+                data-identifiants-open
+              >
+                Voir les identifiants (<%= identifiantsList.length %>)
+              </button>
+            <% } else { %>
+              <span class="text-slate-400">Aucun identifiant enregistré.</span>
+            <% } %>
+          </dd>
+        </div>
+        <div class="rounded-md border border-slate-100 bg-slate-50 px-4 py-3 sm:col-span-2">
+          <dt class="text-xs uppercase tracking-wide text-slate-500">Employé attribué</dt>
+          <dd class="mt-1 text-sm font-medium text-slate-900">
+            <% if (equipement.employe_id) { %>
+              <span><%= equipement.employe_nom_complet %></span>
+              <% if (equipement.employe_poste) { %>
+                <span class="ml-2 text-xs text-slate-500"><%= equipement.employe_poste %></span>
+              <% } %>
+              <% if (equipement.employe_territoire) { %>
+                <span class="ml-2 inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">
+                  <%= equipement.employe_territoire === 'martinique' ? 'Martinique' : 'Guadeloupe' %>
+                </span>
+              <% } %>
+            <% } else { %>
+              <span class="text-slate-400">Non attribué</span>
+            <% } %>
+          </dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm xl:col-span-1">
+      <% const isObservationCategory = eventFormData.categorie === 'Observation'; %>
+      <% const isAttributionCategory = eventFormData.categorie === 'Attribution'; %>
+      <% const isEtatCategory = eventFormData.categorie === 'État'; %>
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-semibold text-slate-900"><%= eventFormMode === 'edit' ? 'Modifier un événement' : 'Nouvel événement' %></h2>
+          <p class="text-sm text-slate-600">Enregistrez ici les actions, observations ou documents relatifs à ce matériel.</p>
+        </div>
+        <% if (eventFormMode === 'edit') { %>
+          <a
+            href="/equipements/<%= equipement.id %>"
+            class="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+          >
+            Annuler
+          </a>
+        <% } %>
+      </div>
+
+      <% if (eventErrors.length) { %>
+        <div class="mt-4 rounded-md border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <ul class="list-disc space-y-1 pl-4">
+            <% eventErrors.forEach(function(error) { %>
+              <li><%= error %></li>
+            <% }) %>
+          </ul>
+        </div>
+      <% } %>
+
+      <form
+        method="post"
+        action="<%= eventFormMode === 'edit' && eventFormData.id ? `/equipements/${equipement.id}/evenements/${eventFormData.id}/modifier` : `/equipements/${equipement.id}/evenements` %>"
+        enctype="multipart/form-data"
+        class="mt-6 space-y-5"
+        data-equipement-event-form
+      >
+        <div>
+          <label for="event-categorie" class="block text-sm font-medium text-slate-700">Type d'événement *</label>
+          <select
+            id="event-categorie"
+            name="categorie"
+            required
+            data-event-category
+            class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+          >
+            <% eventCategories.forEach(function(category) { %>
+              <option value="<%= category %>" <%= eventFormData.categorie === category ? 'selected' : '' %>><%= category %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div>
+          <label for="event-date" class="block text-sm font-medium text-slate-700">Date *</label>
+          <input
+            id="event-date"
+            name="date_evenement"
+            type="date"
+            required
+            value="<%= eventFormData.date_evenement || '' %>"
+            class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+          />
+        </div>
+
+        <div
+          data-event-field="attribution"
+          class="space-y-1 <%= isAttributionCategory ? '' : 'hidden' %>"
+          aria-hidden="<%= isAttributionCategory ? 'false' : 'true' %>"
+        >
+          <label for="event-attribution" class="block text-sm font-medium text-slate-700">Attribuer à *</label>
+          <% if (availableEmployes.length === 0) { %>
+            <div class="rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+              Aucun collaborateur disponible pour une attribution immédiate.
+            </div>
+          <% } else { %>
+            <select
+              id="event-attribution"
+              name="attribution_employe_id"
+              class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            >
+              <option value="">Sélectionnez un collaborateur</option>
+              <% availableEmployes.forEach(function(employeOption) { %>
+                <option
+                  value="<%= employeOption.id %>"
+                  <%= String(eventFormData.attribution_employe_id || '') === String(employeOption.id) ? 'selected' : '' %>
+                >
+                  <%= employeOption.nom_complet %>
+                  <% if (employeOption.poste) { %>
+                    - <%= employeOption.poste %>
+                  <% } %>
+                </option>
+              <% }) %>
+            </select>
+            <p class="text-xs text-slate-500">Tous les collaborateurs disponibles apparaissent dans cette liste.</p>
+          <% } %>
+        </div>
+
+        <div
+          data-event-field="etat"
+          class="space-y-1 <%= isEtatCategory ? '' : 'hidden' %>"
+          aria-hidden="<%= isEtatCategory ? 'false' : 'true' %>"
+        >
+          <label for="event-etat" class="block text-sm font-medium text-slate-700">Nouvel état *</label>
+          <select
+            id="event-etat"
+            name="nouvel_etat"
+            class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+          >
+            <option value="">Sélectionnez un état</option>
+            <% states.forEach(function(stateOption) { %>
+              <option value="<%= stateOption %>" <%= eventFormData.nouvel_etat === stateOption ? 'selected' : '' %>><%= stateOption %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div>
+          <% const defaultDescriptionPlaceholder = "Ajoutez des précisions sur l'événement."; %>
+          <% const observationPlaceholder = "Décrivez précisément l'observation réalisée."; %>
+          <label for="event-description" class="block text-sm font-medium text-slate-700">
+            Description <span data-event-description-required class="ml-1 text-xs font-semibold text-rose-600 <%= isObservationCategory ? '' : 'hidden' %>">obligatoire pour une observation</span>
+          </label>
+          <textarea
+            id="event-description"
+            name="description"
+            rows="4"
+            class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            data-event-description
+            data-default-placeholder="<%= defaultDescriptionPlaceholder %>"
+            data-observation-placeholder="<%= observationPlaceholder %>"
+            placeholder="<%= isObservationCategory ? observationPlaceholder : defaultDescriptionPlaceholder %>"
+            <%= isObservationCategory ? 'required' : '' %>
+            aria-required="<%= isObservationCategory ? 'true' : 'false' %>"
+          ><%= eventFormData.description || '' %></textarea>
+          <p
+            class="mt-1 text-xs text-slate-500"
+            data-event-description-help
+          >
+            <%= isObservationCategory ? 'Obligatoire pour une observation.' : 'Optionnel.' %>
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <label for="event-document" class="block text-sm font-medium text-slate-700">Document justificatif</label>
+          <input
+            id="event-document"
+            name="document"
+            type="file"
+            accept="application/pdf,image/*"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+          />
+          <p class="text-xs text-slate-500">PDF ou image, taille maximale 5&nbsp;Mo.</p>
+          <% if (eventFormMode === 'edit' && eventFormData.document) { %>
+            <div class="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+              <a
+                href="/uploads/<%= eventFormData.document %>"
+                target="_blank"
+                class="text-indigo-600 hover:text-indigo-700"
+              >
+                Consulter le document actuel
+              </a>
+              <label class="inline-flex items-center gap-2 text-xs text-rose-600">
+                <input
+                  type="checkbox"
+                  name="remove_document"
+                  value="1"
+                  class="h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-400"
+                />
+                Supprimer
+              </label>
+            </div>
+          <% } %>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button
+            type="submit"
+            class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          >
+            <%= eventFormMode === 'edit' ? 'Mettre à jour' : 'Enregistrer' %>
+          </button>
+          <% if (eventFormMode !== 'edit') { %>
+            <a
+              href="/equipements/<%= equipement.id %>"
+              class="text-sm text-slate-500 hover:text-slate-700"
+            >
+              Réinitialiser
+            </a>
+          <% } %>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 class="text-lg font-semibold text-slate-900">Historique des événements</h2>
+        <p class="text-sm text-slate-600">Suivi chronologique des actions et documents liés à cet équipement.</p>
+      </div>
+      <span class="text-xs uppercase tracking-wide text-slate-500"><%= events.length %> événement(s)</span>
+    </div>
+
+    <% if (events.length === 0) { %>
+      <div class="mt-6 rounded-md border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">
+        Aucun événement enregistré pour le moment. Ajoutez vos premières entrées afin de conserver un historique complet.
+      </div>
+    <% } else { %>
+      <ul class="mt-6 space-y-4">
+        <% events.forEach((eventItem) => { %>
+          <li class="rounded-md border border-slate-200 bg-white shadow-sm">
+            <div class="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div class="flex items-center gap-3 text-sm text-slate-600">
+                <span class="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700"><%= formatDate(eventItem.date_evenement) %></span>
+                <span class="text-sm font-medium text-slate-900"><%= eventItem.categorie %></span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-slate-500">
+                <a
+                  href="/equipements/<%= equipement.id %>?editEvenement=<%= eventItem.id %>"
+                  class="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Modifier
+                </a>
+                <form
+                  method="post"
+                  action="/equipements/<%= equipement.id %>/evenements/<%= eventItem.id %>/supprimer"
+                  onsubmit="return confirm('Supprimer cet événement ?');"
+                >
+                  <button
+                    type="submit"
+                    class="rounded-md border border-rose-300 px-3 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50"
+                  >
+                    Supprimer
+                  </button>
+                </form>
+              </div>
+            </div>
+            <% if (eventItem.description) { %>
+              <div class="px-4 py-3 text-sm text-slate-700"><%= eventItem.description %></div>
+            <% } %>
+            <% if (eventItem.categorie === 'Attribution') { %>
+              <div class="border-t border-slate-100 px-4 py-3 text-sm text-slate-700">
+                <span class="font-medium text-slate-900">Nouvel attributaire :</span>
+                <% if (eventItem.nouvel_employe_nom_complet) { %>
+                  <span class="ml-1"><%= eventItem.nouvel_employe_nom_complet %></span>
+                  <% if (eventItem.nouvel_employe_poste) { %>
+                    <span class="ml-2 text-xs text-slate-500"><%= eventItem.nouvel_employe_poste %></span>
+                  <% } %>
+                  <% if (eventItem.nouvel_employe_territoire) { %>
+                    <span class="ml-2 inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                      <%= eventItem.nouvel_employe_territoire === 'martinique' ? 'Martinique' : 'Guadeloupe' %>
+                    </span>
+                  <% } %>
+                <% } else { %>
+                  <span class="ml-1 text-slate-500">Aucun collaborateur renseigné</span>
+                <% } %>
+              </div>
+            <% } %>
+            <% if (eventItem.categorie === 'État' && eventItem.nouvel_etat) { %>
+              <div class="border-t border-slate-100 px-4 py-3 text-sm text-slate-700">
+                <span class="font-medium text-slate-900">Nouvel état :</span>
+                <span class="ml-1 inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
+                  <%= eventItem.nouvel_etat %>
+                </span>
+              </div>
+            <% } %>
+            <div class="flex flex-col gap-2 border-t border-slate-100 px-4 py-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                Enregistré le <%= formatDate(eventItem.date_creation.substring(0, 10)) %>
+              </div>
+              <div>
+                <% if (eventItem.document) { %>
+                  <a href="/uploads/<%= eventItem.document %>" target="_blank" class="text-indigo-600 hover:text-indigo-700">Consulter le document</a>
+                <% } else { %>
+                  <span class="text-slate-400">Aucun document</span>
+                <% } %>
+              </div>
+            </div>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+</div>
+
+  <div
+    class="identifiants-modal"
+    data-identifiants-modal
+    aria-hidden="true"
+  >
+    <div class="identifiants-modal__backdrop" data-identifiants-backdrop></div>
+    <div
+      class="identifiants-modal__dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="identifiants-modal-title"
+    >
+      <header class="identifiants-modal__header">
+        <div>
+          <p class="identifiants-modal__eyebrow">Sécurité</p>
+          <h3 class="identifiants-modal__title" id="identifiants-modal-title">Identifiants de connexion</h3>
+          <p class="identifiants-modal__subtitle">Ces informations restent confidentielles. Limitez la diffusion.</p>
+        </div>
+        <button type="button" class="identifiants-modal__close" data-identifiants-close data-identifiants-first aria-label="Fermer">
+          &times;
+        </button>
+      </header>
+      <section class="identifiants-modal__body">
+        <% if (identifiantsList.length) { %>
+          <ul class="identifiants-modal__list">
+            <% identifiantsList.forEach((identifiant) => { %>
+              <li class="identifiants-modal__item">
+                <span class="identifiants-modal__item-label"><%= identifiant.nom %></span>
+                <span class="identifiants-modal__item-secret"><%= identifiant.mot_de_passe %></span>
+              </li>
+            <% }) %>
+          </ul>
+        <% } else { %>
+          <p class="identifiants-modal__empty">Aucun identifiant enregistré pour cet équipement.</p>
+        <% } %>
+      </section>
+      <footer class="identifiants-modal__footer">
+        <button type="button" class="identifiants-modal__cta" data-identifiants-close>Fermer</button>
+      </footer>
+    </div>
+  </div>
+
+  <style>
+    .identifiants-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .identifiants-modal.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .identifiants-modal__backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.58);
+      backdrop-filter: blur(4px);
+    }
+    .identifiants-modal__dialog {
+      position: relative;
+      width: min(520px, 100%);
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+      border-radius: 18px;
+      box-shadow: 0 25px 60px -20px rgba(15, 23, 42, 0.35);
+      overflow: hidden;
+      transform: translateY(24px);
+      opacity: 0;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+    }
+    .identifiants-modal.is-visible .identifiants-modal__dialog {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    .identifiants-modal__header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1.5rem;
+      border-bottom: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+    .identifiants-modal__eyebrow {
+      margin: 0;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6366f1;
+      font-weight: 600;
+    }
+    .identifiants-modal__title {
+      margin: 0.2rem 0 0;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .identifiants-modal__subtitle {
+      margin: 0.35rem 0 0;
+      font-size: 0.85rem;
+      color: #475569;
+    }
+    .identifiants-modal__close {
+      flex-shrink: 0;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 999px;
+      border: 1px solid #cbd5f5;
+      background: #ffffff;
+      color: #1e293b;
+      font-size: 1.1rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .identifiants-modal__close:hover {
+      background: #e0e7ff;
+      border-color: #94a3b8;
+    }
+    .identifiants-modal__body {
+      padding: 1.25rem 1.5rem;
+      overflow-y: auto;
+      flex: 1;
+      background: #ffffff;
+    }
+    .identifiants-modal__list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .identifiants-modal__item {
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: #f8fafc;
+      padding: 0.9rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+    .identifiants-modal__item-label {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+    .identifiants-modal__item-secret {
+      font-family: 'SFMono-Regular', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+      font-size: 0.8rem;
+      color: #0f172a;
+      word-break: break-all;
+      background: #e2e8f0;
+      padding: 0.3rem 0.5rem;
+      border-radius: 0.4rem;
+      display: inline-block;
+    }
+    .identifiants-modal__empty {
+      margin: 0;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #64748b;
+      background: #f8fafc;
+      border: 1px dashed #cbd5f5;
+      border-radius: 14px;
+    }
+    .identifiants-modal__footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid #e2e8f0;
+      background: #f8fafc;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .identifiants-modal__cta {
+      border-radius: 0.6rem;
+      border: 1px solid #cbd5f5;
+      background: #ffffff;
+      color: #1e293b;
+      font-size: 0.9rem;
+      padding: 0.45rem 1.4rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .identifiants-modal__cta:hover {
+      background: #e2e8f0;
+    }
+    @media (max-width: 600px) {
+      .identifiants-modal {
+        padding: 1rem;
+      }
+      .identifiants-modal__dialog {
+        border-radius: 14px;
+      }
+    }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const modal = document.querySelector('[data-identifiants-modal]');
+      if (modal) {
+        const openButtons = document.querySelectorAll('[data-identifiants-open]');
+        if (openButtons.length) {
+          if (modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
+          }
+
+          const closeButtons = modal.querySelectorAll('[data-identifiants-close]');
+          const backdrop = modal.querySelector('[data-identifiants-backdrop]');
+          let lastFocused = null;
+          let previousBodyOverflow = '';
+
+          const getFocusable = () => {
+            const selectors = 'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+            return Array.from(modal.querySelectorAll(selectors)).filter((element) => {
+              if (!(element instanceof HTMLElement)) {
+                return false;
+              }
+              return element.offsetParent !== null && !element.hasAttribute('disabled') && element.tabIndex !== -1;
+            });
+          };
+
+          const openModal = () => {
+            lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            previousBodyOverflow = document.body.style.overflow;
+            document.body.style.overflow = 'hidden';
+            modal.classList.add('is-visible');
+            modal.setAttribute('aria-hidden', 'false');
+            const preferred = modal.querySelector('[data-identifiants-first]');
+            const focusTarget = preferred || getFocusable()[0];
+            if (focusTarget && typeof focusTarget.focus === 'function') {
+              focusTarget.focus();
+            }
+          };
+
+          const closeModal = () => {
+            modal.classList.remove('is-visible');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = previousBodyOverflow;
+            if (lastFocused && typeof lastFocused.focus === 'function') {
+              lastFocused.focus();
+            }
+          };
+
+          openButtons.forEach((button) => {
+            button.addEventListener('click', (event) => {
+              event.preventDefault();
+              openModal();
+            });
+          });
+
+          closeButtons.forEach((button) => {
+            button.addEventListener('click', (event) => {
+              event.preventDefault();
+              closeModal();
+            });
+          });
+
+          if (backdrop) {
+            backdrop.addEventListener('click', closeModal);
+          }
+
+          document.addEventListener('keydown', (event) => {
+            if (modal.getAttribute('aria-hidden') === 'true') {
+              return;
+            }
+
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              closeModal();
+              return;
+            }
+
+            if (event.key === 'Tab') {
+              const focusable = getFocusable();
+              if (!focusable.length) {
+                event.preventDefault();
+                return;
+              }
+              const first = focusable[0];
+              const last = focusable[focusable.length - 1];
+
+              if (event.shiftKey) {
+                if (document.activeElement === first) {
+                  event.preventDefault();
+                  last.focus();
+                }
+              } else if (document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+              }
+            }
+          });
+        }
+      }
+
+      const form = document.querySelector('[data-equipement-event-form]');
+      if (!form) {
+        return;
+      }
+
+      const categorySelect = form.querySelector('[data-event-category]');
+      if (!categorySelect) {
+        return;
+      }
+
+      const fieldMap = {
+        Attribution: form.querySelector('[data-event-field="attribution"]'),
+        'État': form.querySelector('[data-event-field="etat"]')
+      };
+
+      const descriptionField = form.querySelector('[data-event-description]');
+      const descriptionRequiredIndicator = form.querySelector('[data-event-description-required]');
+      const descriptionHelp = form.querySelector('[data-event-description-help]');
+      const defaultDescriptionPlaceholder = descriptionField ? descriptionField.dataset.defaultPlaceholder : '';
+      const observationDescriptionPlaceholder = descriptionField ? descriptionField.dataset.observationPlaceholder : '';
+
+      function toggleFields() {
+        const currentValue = categorySelect.value;
+        Object.entries(fieldMap).forEach(function ([key, element]) {
+          if (!element) {
+            return;
+          }
+          const isActive = key === currentValue;
+          element.classList.toggle('hidden', !isActive);
+          if (isActive) {
+            element.removeAttribute('aria-hidden');
+          } else {
+            element.setAttribute('aria-hidden', 'true');
+          }
+        });
+
+        if (descriptionField) {
+          const isObservation = currentValue === 'Observation';
+          descriptionField.required = isObservation;
+          descriptionField.setAttribute('aria-required', isObservation ? 'true' : 'false');
+          descriptionField.placeholder = isObservation && observationDescriptionPlaceholder
+            ? observationDescriptionPlaceholder
+            : defaultDescriptionPlaceholder;
+
+          if (descriptionRequiredIndicator) {
+            descriptionRequiredIndicator.classList.toggle('hidden', !isObservation);
+          }
+          if (descriptionHelp) {
+            descriptionHelp.textContent = isObservation ? 'Obligatoire pour une observation.' : 'Optionnel.';
+          }
+        }
+      }
+
+      categorySelect.addEventListener('change', toggleFields);
+      toggleFields();
+    });
+  </script>

@@ -1,0 +1,13 @@
+<%- include('../layout', {
+  title: employe.nom_complet ? `Employé · ${employe.nom_complet}` : 'Fiche employé',
+  bodyView: 'partials/employe-detail-body',
+  bodyData: {
+    employe,
+    equipements,
+    territoires,
+    assignmentStats,
+    stateBadgeTheme,
+    successMessage,
+    errorMessage
+  }
+}) %>

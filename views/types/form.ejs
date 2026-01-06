@@ -1,0 +1,5 @@
+<%- include('../layout', {
+  title: mode === 'edit' ? 'Modifier un type' : 'Nouveau type',
+  bodyView: 'partials/types-form-body',
+  bodyData: { mode, type, errors }
+}) %>

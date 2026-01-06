@@ -1,0 +1,62 @@
+<div class="max-w-3xl mx-auto flex flex-col gap-6">
+  <div>
+    <a href="/types" class="text-sm text-indigo-600 hover:text-indigo-700">← Retour à la liste des types</a>
+  </div>
+  <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+    <h1 class="text-2xl font-semibold text-slate-900">
+      <%= mode === 'edit' ? 'Modifier un type' : 'Ajouter un type' %>
+    </h1>
+    <p class="mt-2 text-sm text-slate-600">Définissez un type de matériel pour standardiser la saisie dans l'inventaire.</p>
+
+    <% if (errors.length) { %>
+      <div class="mt-4 space-y-2 rounded-md border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <% errors.forEach((error) => { %>
+          <p><%= error %></p>
+        <% }) %>
+      </div>
+    <% } %>
+
+    <form
+      class="mt-6 grid gap-4"
+      method="post"
+      action="<%= mode === 'edit' ? `/types/modifier/${type.id}` : '/types/ajouter' %>"
+    >
+      <div>
+        <label for="nom" class="block text-sm font-medium text-slate-700">Nom *</label>
+        <input
+          id="nom"
+          name="nom"
+          type="text"
+          value="<%= type.nom || '' %>"
+          required
+          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        />
+      </div>
+
+      <div>
+        <label for="description" class="block text-sm font-medium text-slate-700">Description</label>
+        <textarea
+          id="description"
+          name="description"
+          rows="3"
+          class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        ><%= type.description || '' %></textarea>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-2">
+        <a
+          href="/types"
+          class="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Annuler
+        </a>
+        <button
+          type="submit"
+          class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+        >
+          <%= mode === 'edit' ? 'Mettre à jour' : 'Enregistrer' %>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

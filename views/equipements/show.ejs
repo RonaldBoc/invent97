@@ -1,0 +1,19 @@
+<%- include('../layout', {
+  title: `Équipement #${equipement.id}`,
+  bodyView: 'partials/equipement-detail-body',
+  bodyData: {
+    equipement,
+    employes,
+    types,
+    states,
+    events,
+    eventFormMode,
+    eventFormData,
+    eventErrors,
+    successMessage,
+    errorMessage,
+    eventCategories,
+    stateBadgeTheme,
+    availableEmployes
+  }
+}) %>
